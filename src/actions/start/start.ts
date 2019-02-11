@@ -62,15 +62,12 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
           accounts: accounts,
         };
         break;
-      case "/":
+      default:
+        // koa sends 404 by default
         const q = context.request.query;
         if (q.module === "account" && q.action === "txlist") {
           if (context.request.method !== "GET") {
             throw new HttpError(405, "This endpoint requires a GET request");
-          }
-
-          if (context.request.header.accept !== "application/json, text/plain, */*") {
-            throw new HttpError(415, "header 'application/json, text/plain, */*' expected");
           }
           const options = RequestParser.parseAccountBody(q);
           if (!scraper.isValidAddress(options.address)) {
@@ -81,8 +78,6 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
           // tslint:disable-next-line:no-object-mutation
           context.response.body = accountTxs; // === undefined ? accountTxs : {result : null};
         }
-        break;
-      default:
       // koa sends 404 by default
     }
   });

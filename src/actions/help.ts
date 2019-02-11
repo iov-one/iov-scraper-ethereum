@@ -8,9 +8,8 @@ help      Shows a help text and exits
 
 version   Prints the version and exits
 
-start     Starts the faucet
-           1  Codec
-           2  Ganache base URL, e.g. http://localhost:8545
+start     Starts the scraper
+           1  Ganache base URL, e.g. http://localhost:8545
 
 Environment variables
 
