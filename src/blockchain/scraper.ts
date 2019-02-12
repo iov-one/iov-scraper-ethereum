@@ -37,7 +37,7 @@ export interface TxDetail {
 
 let accounts = {};
 let blocks = new Array<Block>();
-let lastBlockLoadded = 0;
+let lastBlockLoaded = 0;
 
 export class Scraper {
   public static async establish(baseUrl: string): Promise<Scraper> {
@@ -77,12 +77,12 @@ export class Scraper {
       if (options.startblock !== undefined) {
         const startblock = Number(options.startblock);
         // tslint:disable-next-line:no-object-mutation
-        account.result = account.result.filter((tx: TxDetail) => Number(tx.blockNumber) > startblock);
+        account.result = account.result.filter((tx: TxDetail) => Number(tx.blockNumber) >= startblock);
       }
       if (options.endblock !== undefined) {
         const endblock = Number(options.endblock);
         // tslint:disable-next-line:no-object-mutation
-        account.result = account.result.filter((tx: TxDetail) => Number(tx.blockNumber) < endblock);
+        account.result = account.result.filter((tx: TxDetail) => Number(tx.blockNumber) <= endblock);
       }
       if (options.sort !== undefined) {
         switch (options.sort) {
@@ -104,11 +104,12 @@ export class Scraper {
   }
   public async loadBlockchain(): Promise<void> {
     const lastBlock = await this.height();
-    if (lastBlockLoadded < lastBlock) {
-      for (let i = lastBlockLoadded; i < lastBlock; i++) {
+    if (lastBlockLoaded < lastBlock) {
+      const loadFirstBlock = lastBlockLoaded === 0 ? 0 : 1;
+      for (let i = lastBlockLoaded + loadFirstBlock; i <= lastBlock; i++) {
         const block = await this.handler.getBlockByNumber(i);
         blocks.push(block);
-        block.transactions.forEach(async tx => {
+        for (const tx of block.transactions) {
           const txStatus = await this.handler.getTransactionStatus(tx.hash);
           const isError = getErrorFlag(txStatus.status);
           const confirmations = lastBlock - Number(tx.blockNumber);
@@ -143,12 +144,12 @@ export class Scraper {
             };
           }
           accounts[tx.to].result.push(txDetail);
-        });
+        }
       }
-      lastBlockLoadded = lastBlock;
-    } else if (lastBlock < lastBlockLoadded) {
+      lastBlockLoaded = lastBlock;
+    } else if (lastBlock < lastBlockLoaded) {
       blocks = new Array<Block>();
-      lastBlockLoadded = 0;
+      lastBlockLoaded = 0;
       accounts = {};
       await this.loadBlockchain();
     }

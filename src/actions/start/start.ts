@@ -76,7 +76,7 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
           await scraper.loadBlockchain();
           const accountTxs = scraper.getAccountTxs(options);
           // tslint:disable-next-line:no-object-mutation
-          context.response.body = accountTxs; // === undefined ? accountTxs : {result : null};
+          context.response.body = accountTxs !== undefined ? accountTxs : { result: null };
         }
       // koa sends 404 by default
     }
