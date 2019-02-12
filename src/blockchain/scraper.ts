@@ -72,8 +72,10 @@ export class Scraper {
     return accounts;
   }
   public getAccountTxs(options: AccountRequestBodyData): TxsAccount | undefined {
-    const account = accounts[options.address.toLowerCase()];
-    if (account !== undefined) {
+    const acc = accounts[options.address.toLowerCase()];
+    let account;
+    if (acc !== undefined) {
+      account = JSON.parse(JSON.stringify(acc));
       if (options.startblock !== undefined) {
         const startblock = Number(options.startblock);
         // tslint:disable-next-line:no-object-mutation
