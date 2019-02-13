@@ -13,5 +13,5 @@ COPY --from=build-env /app/package.json /app/package.json
 WORKDIR /app
 
 EXPOSE 8546
-ENTRYPOINT ["/app/bin/iov-scraper-ethereum"]
+ENTRYPOINT ["/app/bin/iov-scraper"]
 CMD [""]

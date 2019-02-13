@@ -68,5 +68,6 @@ curl -X GET "http://localhost:8546/?module=account&action=txlist&address=0x65e2f
 ## TODO
 - [x] Get a list of 'Internal' Transactions by Address
 - [x] Allow url path querying as etherscan
+- [ ] Add tests
 - [ ] Complete set of APIs
 - [ ] Implement local DB to load full chain
