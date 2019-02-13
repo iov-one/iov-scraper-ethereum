@@ -21,16 +21,16 @@ export class RequestParser {
       throw new HttpError(400, "Property 'address' must not be empty.");
     }
 
-    if (startblock && !startblock.match(/^[0-9]+$/)) {
+    if (startblock !== undefined && !startblock.match(/^[0-9]+$/)) {
       throw new Error("Property 'startblock' is not a valid string number");
     }
 
-    if (endblock && !endblock.match(/^[0-9]+$/)) {
+    if (endblock !== undefined && !endblock.match(/^[0-9]+$/)) {
       throw new Error("Property 'endblock' is not a valid string number");
     }
 
-    if (sort && ["asc", "desc"].indexOf(sort) === -1) {
-      throw new Error("Property 'sort' is not a valid");
+    if (sort !== undefined && ["asc", "desc"].indexOf(sort) === -1) {
+      throw new Error("Property 'sort' is not a valid string");
     }
 
     return {
