@@ -62,7 +62,7 @@ curl http://localhost:8546/accounts
 
 Get account by address
 ```
-curl -X GET "http://localhost:8546/?module=account&action=txlist&address=0x65e2ff4c989dd53387dfeff8b36e58265047cf34"
+curl -X GET "http://localhost:8546/?module=account&action=txlist&address=0x65E2fF4C989dd53387dfeFF8b36e58265047Cf34"
 ```
 
 ## TODO
