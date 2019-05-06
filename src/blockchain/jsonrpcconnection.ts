@@ -1,8 +1,6 @@
-import axios from "axios";
 import { ReadonlyDate } from "readonly-date";
 
-import { BlockId, TransactionId } from "@iov/bcp-types";
-
+import { BlockId, TransactionId } from "@iov/bcp";
 import { isJsonRpcErrorResponse } from "@iov/jsonrpc";
 
 import { HttpJsonRpcClient } from "./httpjsonrpcclient";
