@@ -47,14 +47,6 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
           blocks: await scraper.height(),
         };
         break;
-      case "/blocks":
-        await scraper.loadBlockchain();
-        const blocks = scraper.getBlocks();
-        // tslint:disable-next-line:no-object-mutation
-        context.response.body = {
-          blocks: blocks,
-        };
-        break;
       case "/accounts":
         await scraper.loadBlockchain();
         const accounts = {};

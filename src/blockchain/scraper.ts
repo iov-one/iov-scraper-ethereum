@@ -3,7 +3,7 @@ import { ChainId } from "@iov/bcp";
 import { ethereumCodec, EthereumConnection } from "@iov/ethereum";
 
 import { AccountRequestBodyData } from "../actions/api/requestparser";
-import { Block, JsonRcpConnection } from "./jsonrpcconnection";
+import { JsonRcpConnection } from "./jsonrpcconnection";
 import { decodeHexQuantityString } from "./utils";
 
 function getErrorFlag(txStatus: string): "0" | "1" {
@@ -46,21 +46,17 @@ export interface AccountStorage {
 
 /** This is what needs to be persisted in the long run */
 class Database {
-  // tslint:disable-next-line: readonly-keyword readonly-array
-  public blocks: Block[];
   // tslint:disable-next-line: readonly-keyword
   public lastBlockLoaded: number;
   // tslint:disable-next-line: readonly-keyword
   public accounts: Map<string, AccountStorage>;
 
   constructor() {
-    this.blocks = [];
     this.lastBlockLoaded = 0;
     this.accounts = new Map();
   }
 
   public clear(): void {
-    this.blocks = new Array<Block>();
     this.lastBlockLoaded = 0;
     this.accounts = new Map();
   }
@@ -146,17 +142,12 @@ export class Scraper {
     return accountCopy;
   }
 
-  public getBlocks(): ReadonlyArray<Block> {
-    return this.db.blocks;
-  }
-
   public async loadBlockchain(): Promise<void> {
     const lastBlock = await this.height();
     if (this.db.lastBlockLoaded < lastBlock) {
       const loadFirstBlock = this.db.lastBlockLoaded === 0 ? 0 : 1;
       for (let height = this.db.lastBlockLoaded + loadFirstBlock; height <= lastBlock; height++) {
         const block = await this.handler.getBlockByNumber(height);
-        this.db.blocks.push(block);
         for (const tx of block.transactions) {
           const txStatus = await this.handler.getTransactionStatus(tx.hash);
           const isError = getErrorFlag(txStatus.status);

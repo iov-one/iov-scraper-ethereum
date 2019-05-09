@@ -8,3 +8,4 @@
 Breaking changes
 
 - Move API to the `/api` endpoint. Before any path worked.
+- Remove `/blocks` endpoint since the full blocks are not stored anymore
