@@ -63,8 +63,7 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
           accounts: accounts,
         };
         break;
-      default:
-        // koa sends 404 by default
+      case "/api":
         const q = context.request.query;
         if (q.module === "account" && q.action === "txlist") {
           if (context.request.method !== "GET") {
@@ -78,7 +77,11 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
           const accountTxs = scraper.getAccountTxs(options);
           // tslint:disable-next-line:no-object-mutation
           context.response.body = accountTxs !== undefined ? accountTxs : { result: null };
+        } else {
+          // koa sends 404 by default
         }
+        break;
+      default:
       // koa sends 404 by default
     }
   });
