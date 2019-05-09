@@ -85,4 +85,7 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
 
   console.log(`Starting webserver on port ${port} ...`);
   api.listen(port);
+
+  await scraper.loadBlockchain();
+  console.log("All available blocks processed.");
 }
