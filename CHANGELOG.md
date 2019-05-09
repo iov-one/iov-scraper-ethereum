@@ -9,3 +9,4 @@ Breaking changes
 
 - Move API to the `/api` endpoint. Before any path worked.
 - Remove `/blocks` endpoint since the full blocks are not stored anymore
+- Add `includeData` parameter to `/accounts`. Set to "1" to include data. Unset by default.

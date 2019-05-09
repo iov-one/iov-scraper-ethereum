@@ -15,6 +15,13 @@ function getCount(): number {
   return count++;
 }
 
+function isTrue(data: unknown): boolean {
+  if (data === "1" || data === "true") {
+    return true;
+  }
+  return false;
+}
+
 export const api = new Koa();
 
 export async function start(args: ReadonlyArray<string>): Promise<void> {
@@ -49,10 +56,13 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
         break;
       case "/accounts":
         await scraper.loadBlockchain();
+
+        const includeData = isTrue(context.request.query.includeData);
+
         const accounts = {};
         for (const [address, value] of scraper.getAccounts()) {
           // tslint:disable-next-line:no-object-mutation
-          accounts[address] = value;
+          accounts[address] = includeData ? value : {};
         }
         // tslint:disable-next-line:no-object-mutation
         context.response.body = {
