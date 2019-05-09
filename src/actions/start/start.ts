@@ -25,9 +25,11 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
 
   const port = constants.port;
 
-  console.log("Connecting to blockchain ...");
+  console.log(`Connecting to blockchain ${blockchainBaseUrl} ...`);
   const scraper = await Scraper.establish(blockchainBaseUrl);
   const chainId = scraper.chainId();
+  const height = await scraper.height();
+  console.log(`Connected to ${chainId}; height: ${height}`);
 
   console.log("Creating webserver ...");
   api.use(cors());

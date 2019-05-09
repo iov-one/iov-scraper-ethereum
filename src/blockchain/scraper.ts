@@ -153,6 +153,7 @@ export class Scraper {
           }
           accounts[tx.to].result.push(txDetail);
         }
+        console.log(`Done processing block of height ${height}`);
       }
       lastBlockLoaded = lastBlock;
     } else if (lastBlock < lastBlockLoaded) {
