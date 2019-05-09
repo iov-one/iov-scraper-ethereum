@@ -64,21 +64,31 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
         };
         break;
       case "/api":
-        const q = context.request.query;
-        if (q.module === "account" && q.action === "txlist") {
-          if (context.request.method !== "GET") {
-            throw new HttpError(405, "This endpoint requires a GET request");
+        if (context.request.method !== "GET") {
+          throw new HttpError(405, "This endpoint requires a GET request");
+        }
+
+        const query = context.request.query;
+        switch (query.module) {
+          case "account": {
+            switch (query.action) {
+              case "txlist":
+                const options = RequestParser.parseAccountBody(query);
+                if (!scraper.isValidAddress(options.address)) {
+                  throw new HttpError(400, "Address is not in the expected format for this chain.");
+                }
+                await scraper.loadBlockchain();
+                const accountTxs = scraper.getAccountTxs(options);
+                // tslint:disable-next-line:no-object-mutation
+                context.response.body = accountTxs !== undefined ? accountTxs : { result: null };
+                break;
+              default:
+                throw new HttpError(400, "Invalid 'action' parameter");
+            }
+            break;
           }
-          const options = RequestParser.parseAccountBody(q);
-          if (!scraper.isValidAddress(options.address)) {
-            throw new HttpError(400, "Address is not in the expected format for this chain.");
-          }
-          await scraper.loadBlockchain();
-          const accountTxs = scraper.getAccountTxs(options);
-          // tslint:disable-next-line:no-object-mutation
-          context.response.body = accountTxs !== undefined ? accountTxs : { result: null };
-        } else {
-          // koa sends 404 by default
+          default:
+            throw new HttpError(400, "Invalid 'module' parameter");
         }
         break;
       default:

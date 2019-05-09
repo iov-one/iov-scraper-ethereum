@@ -3,6 +3,7 @@
 ## 0.3.0
 
 - Start indexing as soon as the scraper is started
+- Better HTTP errors for `module` and `action` parameters
 
 Breaking changes
 
