@@ -57,7 +57,11 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
         break;
       case "/accounts":
         await scraper.loadBlockchain();
-        const accounts = scraper.getAccounts();
+        const accounts = {};
+        for (const [address, value] of scraper.getAccounts()) {
+          // tslint:disable-next-line:no-object-mutation
+          accounts[address] = value;
+        }
         // tslint:disable-next-line:no-object-mutation
         context.response.body = {
           accounts: accounts,
@@ -78,7 +82,7 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
                   throw new HttpError(400, "Address is not in the expected format for this chain.");
                 }
                 await scraper.loadBlockchain();
-                const accountTxs = scraper.getAccountTxs(options);
+                const accountTxs = scraper.getAccount(options);
                 // tslint:disable-next-line:no-object-mutation
                 context.response.body = accountTxs !== undefined ? accountTxs : { result: null };
                 break;

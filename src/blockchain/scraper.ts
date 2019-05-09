@@ -37,6 +37,13 @@ export interface TxDetails {
   readonly confirmations: number;
 }
 
+export interface AccountStorage {
+  readonly status: string;
+  readonly message: string;
+  // tslint:disable-next-line: readonly-array
+  readonly result: TxDetails[];
+}
+
 /** This is what needs to be persisted in the long run */
 class Database {
   // tslint:disable-next-line: readonly-keyword readonly-array
@@ -44,18 +51,18 @@ class Database {
   // tslint:disable-next-line: readonly-keyword
   public lastBlockLoaded: number;
   // tslint:disable-next-line: readonly-keyword
-  public accounts: any;
+  public accounts: Map<string, AccountStorage>;
 
   constructor() {
     this.blocks = [];
     this.lastBlockLoaded = 0;
-    this.accounts = {};
+    this.accounts = new Map();
   }
 
   public clear(): void {
     this.blocks = new Array<Block>();
     this.lastBlockLoaded = 0;
-    this.accounts = {};
+    this.accounts = new Map();
   }
 }
 
@@ -95,43 +102,48 @@ export class Scraper {
     return ethereumCodec.isValidAddress(address);
   }
 
-  public getTransactions(address: string): Promise<TxsAccount> {
-    return this.db.accounts[address.toLowerCase()].result;
+  public getTransactions(address: string): ReadonlyArray<TxDetails> {
+    const account = this.db.accounts.get(address.toLowerCase());
+    if (!account) {
+      throw new Error("Address not found");
+    }
+    return account.result;
   }
 
-  public getAccounts(): any {
+  public getAccounts(): ReadonlyMap<string, TxsAccount> {
     return this.db.accounts;
   }
 
-  public getAccountTxs(options: AccountRequestBodyData): TxsAccount | undefined {
-    const acc = this.db.accounts[options.address.toLowerCase()];
-    let account;
-    if (acc !== undefined) {
-      account = JSON.parse(JSON.stringify(acc));
-      if (options.startblock !== undefined) {
-        const startblock = Number(options.startblock);
-        // tslint:disable-next-line:no-object-mutation
-        account.result = account.result.filter((tx: TxDetails) => Number(tx.blockNumber) >= startblock);
-      }
-      if (options.endblock !== undefined) {
-        const endblock = Number(options.endblock);
-        // tslint:disable-next-line:no-object-mutation
-        account.result = account.result.filter((tx: TxDetails) => Number(tx.blockNumber) <= endblock);
-      }
-      if (options.sort !== undefined) {
-        switch (options.sort) {
-          case "asc":
-            // tslint:disable-next-line:no-object-mutation
-            account.result = account.result.sort(compareTransactions);
-            break;
-          case "desc":
-            // tslint:disable-next-line:no-object-mutation
-            account.result = account.result.sort(compareTransactions).reverse();
-            break;
-        }
+  public getAccount(options: AccountRequestBodyData): TxsAccount | undefined {
+    const account = this.db.accounts.get(options.address.toLowerCase());
+    if (!account) {
+      return undefined;
+    }
+
+    const accountCopy = JSON.parse(JSON.stringify(account));
+    if (options.startblock !== undefined) {
+      const startblock = Number(options.startblock);
+      // tslint:disable-next-line:no-object-mutation
+      accountCopy.result = accountCopy.result.filter((tx: TxDetails) => Number(tx.blockNumber) >= startblock);
+    }
+    if (options.endblock !== undefined) {
+      const endblock = Number(options.endblock);
+      // tslint:disable-next-line:no-object-mutation
+      accountCopy.result = accountCopy.result.filter((tx: TxDetails) => Number(tx.blockNumber) <= endblock);
+    }
+    if (options.sort !== undefined) {
+      switch (options.sort) {
+        case "asc":
+          // tslint:disable-next-line:no-object-mutation
+          accountCopy.result = accountCopy.result.sort(compareTransactions);
+          break;
+        case "desc":
+          // tslint:disable-next-line:no-object-mutation
+          accountCopy.result = accountCopy.result.sort(compareTransactions).reverse();
+          break;
       }
     }
-    return account;
+    return accountCopy;
   }
 
   public getBlocks(): ReadonlyArray<Block> {
@@ -162,24 +174,26 @@ export class Scraper {
             isError: isError,
             confirmations: confirmations,
           };
-          if (!this.db.accounts[tx.from]) {
+
+          if (!this.db.accounts.has(tx.from)) {
             // tslint:disable-next-line:no-object-mutation
-            this.db.accounts[tx.from] = {
+            this.db.accounts.set(tx.from, {
               status: "empty",
               message: "empty msg",
-              result: new Array<TxsAccount>(),
-            };
+              result: new Array<TxDetails>(),
+            });
           }
-          this.db.accounts[tx.from].result.push(txDetails);
-          if (!this.db.accounts[tx.to]) {
+          this.db.accounts.get(tx.from)!.result.push(txDetails);
+
+          if (!this.db.accounts.has(tx.to)) {
             // tslint:disable-next-line:no-object-mutation
-            this.db.accounts[tx.to] = {
+            this.db.accounts.set(tx.to, {
               status: "empty",
               message: "empty msg",
-              result: new Array<TxsAccount>(),
-            };
+              result: new Array<TxDetails>(),
+            });
           }
-          this.db.accounts[tx.to].result.push(txDetails);
+          this.db.accounts.get(tx.to)!.result.push(txDetails);
         }
         console.log(`Done processing block of height ${height}`);
       }
