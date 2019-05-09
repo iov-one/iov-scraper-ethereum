@@ -6,7 +6,7 @@ import { AccountRequestBodyData } from "../actions/api/requestparser";
 import { Block, JsonRcpConnection } from "./jsonrpcconnection";
 import { decodeHexQuantityString } from "./utils";
 
-function getErrorFlag(txStatus: string): string {
+function getErrorFlag(txStatus: string): "0" | "1" {
   switch (txStatus) {
     case "0":
       return "1";
@@ -20,10 +20,10 @@ function getErrorFlag(txStatus: string): string {
 export interface TxsAccount {
   readonly status: string;
   readonly message: string;
-  readonly result: ReadonlyArray<TxDetail>;
+  readonly result: ReadonlyArray<TxDetails>;
 }
 
-export interface TxDetail {
+export interface TxDetails {
   readonly hash: string;
   readonly blockNumber: string;
   readonly nonce: string;
@@ -33,7 +33,7 @@ export interface TxDetail {
   readonly to: string;
   readonly input: string;
   readonly txreceipt_status: string;
-  readonly isError: string;
+  readonly isError: "0" | "1";
   readonly confirmations: number;
 }
 
@@ -59,6 +59,14 @@ class Database {
   }
 }
 
+/**
+ * A compare function to be used in sort() as described in
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#Description
+ */
+function compareTransactions(a: TxDetails, b: TxDetails): number {
+  return Number(a.blockNumber) - Number(b.blockNumber);
+}
+
 export class Scraper {
   public static async establish(baseUrl: string): Promise<Scraper> {
     const connection = await EthereumConnection.establish(baseUrl);
@@ -68,7 +76,6 @@ export class Scraper {
 
   public readonly connection: EthereumConnection;
   private readonly handler: JsonRcpConnection;
-  private readonly baseUrl: string;
   private readonly db = new Database();
 
   constructor(connection: EthereumConnection, handler: JsonRcpConnection) {
@@ -104,22 +111,22 @@ export class Scraper {
       if (options.startblock !== undefined) {
         const startblock = Number(options.startblock);
         // tslint:disable-next-line:no-object-mutation
-        account.result = account.result.filter((tx: TxDetail) => Number(tx.blockNumber) >= startblock);
+        account.result = account.result.filter((tx: TxDetails) => Number(tx.blockNumber) >= startblock);
       }
       if (options.endblock !== undefined) {
         const endblock = Number(options.endblock);
         // tslint:disable-next-line:no-object-mutation
-        account.result = account.result.filter((tx: TxDetail) => Number(tx.blockNumber) <= endblock);
+        account.result = account.result.filter((tx: TxDetails) => Number(tx.blockNumber) <= endblock);
       }
       if (options.sort !== undefined) {
         switch (options.sort) {
           case "asc":
             // tslint:disable-next-line:no-object-mutation
-            account.result = account.result.sort((a: TxDetail, b: TxDetail) => Number(a) < Number(b));
+            account.result = account.result.sort(compareTransactions);
             break;
           case "desc":
             // tslint:disable-next-line:no-object-mutation
-            account.result = account.result.sort((a: TxDetail, b: TxDetail) => Number(a) < Number(b));
+            account.result = account.result.sort(compareTransactions).reverse();
             break;
         }
       }
@@ -142,7 +149,7 @@ export class Scraper {
           const txStatus = await this.handler.getTransactionStatus(tx.hash);
           const isError = getErrorFlag(txStatus.status);
           const confirmations = lastBlock - Number(tx.blockNumber);
-          const txDetail = {
+          const txDetails: TxDetails = {
             hash: tx.hash,
             blockNumber: decodeHexQuantityString(tx.blockNumber),
             nonce: decodeHexQuantityString(tx.nonce),
@@ -163,7 +170,7 @@ export class Scraper {
               result: new Array<TxsAccount>(),
             };
           }
-          this.db.accounts[tx.from].result.push(txDetail);
+          this.db.accounts[tx.from].result.push(txDetails);
           if (!this.db.accounts[tx.to]) {
             // tslint:disable-next-line:no-object-mutation
             this.db.accounts[tx.to] = {
@@ -172,7 +179,7 @@ export class Scraper {
               result: new Array<TxsAccount>(),
             };
           }
-          this.db.accounts[tx.to].result.push(txDetail);
+          this.db.accounts[tx.to].result.push(txDetails);
         }
         console.log(`Done processing block of height ${height}`);
       }
