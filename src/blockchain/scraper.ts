@@ -1,3 +1,4 @@
+// tslint:disable: no-object-mutation
 import { ChainId } from "@iov/bcp";
 import { ethereumCodec, EthereumConnection } from "@iov/ethereum";
 
@@ -15,6 +16,7 @@ function getErrorFlag(txStatus: string): string {
       throw new Error("Invalid transaction status");
   }
 }
+
 export interface TxsAccount {
   readonly status: string;
   readonly message: string;
@@ -35,9 +37,21 @@ export interface TxDetail {
   readonly confirmations: number;
 }
 
-let accounts = {};
-let blocks = new Array<Block>();
-let lastBlockLoaded = 0;
+/** This is what needs to be persisted in the long run */
+class Database {
+  // tslint:disable-next-line: readonly-keyword readonly-array
+  public blocks: Block[];
+  // tslint:disable-next-line: readonly-keyword
+  public lastBlockLoaded: number;
+  // tslint:disable-next-line: readonly-keyword
+  public accounts: any;
+
+  constructor() {
+    this.blocks = [];
+    this.lastBlockLoaded = 0;
+    this.accounts = {};
+  }
+}
 
 export class Scraper {
   public static async establish(baseUrl: string): Promise<Scraper> {
@@ -49,6 +63,7 @@ export class Scraper {
   public readonly connection: EthereumConnection;
   private readonly handler: JsonRcpConnection;
   private readonly baseUrl: string;
+  private readonly db = new Database();
 
   constructor(connection: EthereumConnection, handler: JsonRcpConnection) {
     this.connection = connection;
@@ -68,15 +83,15 @@ export class Scraper {
   }
 
   public getTransactions(address: string): Promise<TxsAccount> {
-    return accounts[address.toLowerCase()].result;
+    return this.db.accounts[address.toLowerCase()].result;
   }
 
   public getAccounts(): any {
-    return accounts;
+    return this.db.accounts;
   }
 
   public getAccountTxs(options: AccountRequestBodyData): TxsAccount | undefined {
-    const acc = accounts[options.address.toLowerCase()];
+    const acc = this.db.accounts[options.address.toLowerCase()];
     let account;
     if (acc !== undefined) {
       account = JSON.parse(JSON.stringify(acc));
@@ -107,16 +122,16 @@ export class Scraper {
   }
 
   public getBlocks(): ReadonlyArray<Block> {
-    return blocks;
+    return this.db.blocks;
   }
 
   public async loadBlockchain(): Promise<void> {
     const lastBlock = await this.height();
-    if (lastBlockLoaded < lastBlock) {
-      const loadFirstBlock = lastBlockLoaded === 0 ? 0 : 1;
-      for (let height = lastBlockLoaded + loadFirstBlock; height <= lastBlock; height++) {
+    if (this.db.lastBlockLoaded < lastBlock) {
+      const loadFirstBlock = this.db.lastBlockLoaded === 0 ? 0 : 1;
+      for (let height = this.db.lastBlockLoaded + loadFirstBlock; height <= lastBlock; height++) {
         const block = await this.handler.getBlockByNumber(height);
-        blocks.push(block);
+        this.db.blocks.push(block);
         for (const tx of block.transactions) {
           const txStatus = await this.handler.getTransactionStatus(tx.hash);
           const isError = getErrorFlag(txStatus.status);
@@ -134,32 +149,32 @@ export class Scraper {
             isError: isError,
             confirmations: confirmations,
           };
-          if (!accounts[tx.from]) {
+          if (!this.db.accounts[tx.from]) {
             // tslint:disable-next-line:no-object-mutation
-            accounts[tx.from] = {
+            this.db.accounts[tx.from] = {
               status: "empty",
               message: "empty msg",
               result: new Array<TxsAccount>(),
             };
           }
-          accounts[tx.from].result.push(txDetail);
-          if (!accounts[tx.to]) {
+          this.db.accounts[tx.from].result.push(txDetail);
+          if (!this.db.accounts[tx.to]) {
             // tslint:disable-next-line:no-object-mutation
-            accounts[tx.to] = {
+            this.db.accounts[tx.to] = {
               status: "empty",
               message: "empty msg",
               result: new Array<TxsAccount>(),
             };
           }
-          accounts[tx.to].result.push(txDetail);
+          this.db.accounts[tx.to].result.push(txDetail);
         }
         console.log(`Done processing block of height ${height}`);
       }
-      lastBlockLoaded = lastBlock;
-    } else if (lastBlock < lastBlockLoaded) {
-      blocks = new Array<Block>();
-      lastBlockLoaded = 0;
-      accounts = {};
+      this.db.lastBlockLoaded = lastBlock;
+    } else if (lastBlock < this.db.lastBlockLoaded) {
+      this.db.blocks = new Array<Block>();
+      this.db.lastBlockLoaded = 0;
+      this.db.accounts = {};
       await this.loadBlockchain();
     }
   }
