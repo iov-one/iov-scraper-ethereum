@@ -51,6 +51,12 @@ class Database {
     this.lastBlockLoaded = 0;
     this.accounts = {};
   }
+
+  public clear(): void {
+    this.blocks = new Array<Block>();
+    this.lastBlockLoaded = 0;
+    this.accounts = {};
+  }
 }
 
 export class Scraper {
@@ -172,9 +178,7 @@ export class Scraper {
       }
       this.db.lastBlockLoaded = lastBlock;
     } else if (lastBlock < this.db.lastBlockLoaded) {
-      this.db.blocks = new Array<Block>();
-      this.db.lastBlockLoaded = 0;
-      this.db.accounts = {};
+      this.db.clear();
       await this.loadBlockchain();
     }
   }
