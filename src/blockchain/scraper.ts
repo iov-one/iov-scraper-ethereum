@@ -70,6 +70,13 @@ function compareTransactions(a: TxDetails, b: TxDetails): number {
   return Number(a.blockNumber) - Number(b.blockNumber);
 }
 
+function isStringOrNull(data: unknown): data is string | null {
+  if (data === null) {
+    return true;
+  }
+  return typeof data === "string";
+}
+
 export class Scraper {
   public static async establish(baseUrl: string): Promise<Scraper> {
     const connection = await EthereumConnection.establish(baseUrl);
@@ -156,14 +163,29 @@ export class Scraper {
           const txStatus = await this.handler.getTransactionStatus(tx.hash);
           const isError = getErrorFlag(txStatus.status);
           const confirmations = lastBlock - Number(tx.blockNumber);
+
+          const from = tx.from;
+          if (typeof from !== "string") {
+            throw new Error("Found 'from' which is not a string");
+          }
+          const to = tx.to;
+          if (!isStringOrNull(to)) {
+            throw new Error("Found 'to' which is not a string nul null");
+          }
+
+          if (to === null) {
+            console.log(`Skipping contract creation transaction ${tx.hash}`);
+            continue;
+          }
+
           const txDetails: TxDetails = {
             hash: tx.hash,
             blockNumber: decodeHexQuantityString(tx.blockNumber),
             nonce: decodeHexQuantityString(tx.nonce),
             gasUsed: decodeHexQuantityString(txStatus.gasUsed),
             value: decodeHexQuantityString(tx.value),
-            from: tx.from,
-            to: tx.to,
+            from: from,
+            to: to,
             input: tx.input,
             txreceipt_status: txStatus.status,
             isError: isError,
