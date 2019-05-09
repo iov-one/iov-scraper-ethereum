@@ -116,30 +116,34 @@ export class Scraper {
       return undefined;
     }
 
-    const accountCopy = JSON.parse(JSON.stringify(account));
+    // we only sort and filter this array, so no deep copy is required
+    // tslint:disable-next-line: readonly-array
+    let resultCopy = [...account.result];
+
     if (options.startblock !== undefined) {
       const startblock = Number(options.startblock);
-      // tslint:disable-next-line:no-object-mutation
-      accountCopy.result = accountCopy.result.filter((tx: TxDetails) => Number(tx.blockNumber) >= startblock);
+      resultCopy = resultCopy.filter((tx: TxDetails) => Number(tx.blockNumber) >= startblock);
     }
+
     if (options.endblock !== undefined) {
       const endblock = Number(options.endblock);
-      // tslint:disable-next-line:no-object-mutation
-      accountCopy.result = accountCopy.result.filter((tx: TxDetails) => Number(tx.blockNumber) <= endblock);
+      resultCopy = resultCopy.filter((tx: TxDetails) => Number(tx.blockNumber) <= endblock);
     }
-    if (options.sort !== undefined) {
-      switch (options.sort) {
-        case "asc":
-          // tslint:disable-next-line:no-object-mutation
-          accountCopy.result = accountCopy.result.sort(compareTransactions);
-          break;
-        case "desc":
-          // tslint:disable-next-line:no-object-mutation
-          accountCopy.result = accountCopy.result.sort(compareTransactions).reverse();
-          break;
-      }
+
+    switch (options.sort) {
+      case "asc":
+        resultCopy.sort(compareTransactions);
+        break;
+      case "desc":
+        resultCopy.sort(compareTransactions).reverse();
+        break;
     }
-    return accountCopy;
+
+    return {
+      message: account.message,
+      status: account.status,
+      result: resultCopy,
+    };
   }
 
   public async loadBlockchain(): Promise<void> {

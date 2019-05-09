@@ -6,7 +6,7 @@ export interface AccountRequestBodyData {
   readonly address: Address;
   readonly startblock?: string;
   readonly endblock?: string;
-  readonly sort?: string;
+  readonly sort?: "asc" | "desc";
 }
 
 export class RequestParser {
