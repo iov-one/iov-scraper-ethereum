@@ -62,15 +62,19 @@ export class Scraper {
   public async height(): Promise<number> {
     return this.connection.height();
   }
+
   public isValidAddress(address: string): boolean {
     return ethereumCodec.isValidAddress(address);
   }
+
   public getTransactions(address: string): Promise<TxsAccount> {
     return accounts[address.toLowerCase()].result;
   }
+
   public getAccounts(): any {
     return accounts;
   }
+
   public getAccountTxs(options: AccountRequestBodyData): TxsAccount | undefined {
     const acc = accounts[options.address.toLowerCase()];
     let account;
@@ -101,15 +105,17 @@ export class Scraper {
     }
     return account;
   }
+
   public getBlocks(): ReadonlyArray<Block> {
     return blocks;
   }
+
   public async loadBlockchain(): Promise<void> {
     const lastBlock = await this.height();
     if (lastBlockLoaded < lastBlock) {
       const loadFirstBlock = lastBlockLoaded === 0 ? 0 : 1;
-      for (let i = lastBlockLoaded + loadFirstBlock; i <= lastBlock; i++) {
-        const block = await this.handler.getBlockByNumber(i);
+      for (let height = lastBlockLoaded + loadFirstBlock; height <= lastBlock; height++) {
+        const block = await this.handler.getBlockByNumber(height);
         blocks.push(block);
         for (const tx of block.transactions) {
           const txStatus = await this.handler.getTransactionStatus(tx.hash);

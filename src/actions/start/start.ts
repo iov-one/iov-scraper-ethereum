@@ -27,7 +27,7 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
 
   console.log("Connecting to blockchain ...");
   const scraper = await Scraper.establish(blockchainBaseUrl);
-  const connectedChainId = await scraper.chainId();
+  const chainId = scraper.chainId();
 
   console.log("Creating webserver ...");
   api.use(cors());
@@ -37,13 +37,12 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
     switch (context.path) {
       case "/healthz":
       case "/status":
-        const height = await scraper.height();
         // tslint:disable-next-line:no-object-mutation
         context.response.body = {
           status: "ok",
           nodeUrl: blockchainBaseUrl,
-          chainId: connectedChainId,
-          blocks: height,
+          chainId: chainId,
+          blocks: await scraper.height(),
         };
         break;
       case "/blocks":
@@ -81,6 +80,7 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
       // koa sends 404 by default
     }
   });
+
   console.log(`Starting webserver on port ${port} ...`);
   api.listen(port);
 }
