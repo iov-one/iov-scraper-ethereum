@@ -6,6 +6,20 @@ import { isJsonRpcErrorResponse, JsonRpcRequest, JsonRpcResponse, parseJsonRpcRe
 
 import { decodeHexQuantity, decodeHexQuantityString, encodeQuantity } from "./utils";
 
+const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+/** generates a random alphanumeric character  */
+function randomChar(): string {
+  return alphabet[Math.floor(Math.random() * alphabet.length)];
+}
+
+/** Use a random string implementation to avoid leaking requests count via the proxy API */
+function randomStringId(): string {
+  return Array.from({ length: 12 })
+    .map(() => randomChar())
+    .join("");
+}
+
 export interface Block {
   readonly id: BlockId;
   readonly height: number;
@@ -25,7 +39,7 @@ export class JsonRcpClient {
       jsonrpc: "2.0",
       method: "eth_blockNumber",
       params: [],
-      id: 1,
+      id: randomStringId(),
     });
   }
 
@@ -34,7 +48,7 @@ export class JsonRcpClient {
       jsonrpc: "2.0",
       method: "eth_getTransactionByHash",
       params: [txhash],
-      id: 1,
+      id: randomStringId(),
     });
   }
 
@@ -43,7 +57,7 @@ export class JsonRcpClient {
       jsonrpc: "2.0",
       method: "eth_getBlockByNumber",
       params: [encodeQuantity(height), true],
-      id: 1,
+      id: randomStringId(),
     });
     if (isJsonRpcErrorResponse(response)) {
       throw new Error(JSON.stringify(response.error));
@@ -67,7 +81,7 @@ export class JsonRcpClient {
       jsonrpc: "2.0",
       method: "eth_getTransactionReceipt",
       params: [id],
-      id: 2,
+      id: randomStringId(),
     });
     if (isJsonRpcErrorResponse(response)) {
       throw new Error(JSON.stringify(response.error));
