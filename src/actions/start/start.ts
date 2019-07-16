@@ -93,6 +93,20 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
             }
             break;
           }
+          case "proxy": {
+            // see https://etherscan.io/apis#proxy
+            switch (query.action) {
+              case "eth_blockNumber":
+                context.response.body = await scraper.rpcClient.blockNumber();
+                break;
+              case "eth_getTransactionByHash":
+                context.response.body = await scraper.rpcClient.getTransactionByHash(query.txhash);
+                break;
+              default:
+                throw new HttpError(400, "Unsupported 'action' parameter");
+            }
+            break;
+          }
           default:
             throw new HttpError(400, "Invalid 'module' parameter");
         }

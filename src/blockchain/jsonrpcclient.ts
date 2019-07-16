@@ -20,6 +20,24 @@ export class JsonRcpClient {
     this.baseUrl = baseUrl;
   }
 
+  public async blockNumber(): Promise<JsonRpcResponse> {
+    return this.run({
+      jsonrpc: "2.0",
+      method: "eth_blockNumber",
+      params: [],
+      id: 1,
+    });
+  }
+
+  public async getTransactionByHash(txhash: string): Promise<JsonRpcResponse> {
+    return this.run({
+      jsonrpc: "2.0",
+      method: "eth_getTransactionByHash",
+      params: [txhash],
+      id: 1,
+    });
+  }
+
   public async getBlockByNumber(height: number): Promise<Block> {
     const response = await this.run({
       jsonrpc: "2.0",

@@ -4,6 +4,7 @@
 
 - Start indexing as soon as the scraper is started
 - Better HTTP errors for `module` and `action` parameters
+- Add initial proxy module (with actions `eth_blockNumber` and `eth_getTransactionByHash`)
 
 Breaking changes
 

@@ -85,7 +85,7 @@ export class Scraper {
   }
 
   public readonly connection: EthereumConnection;
-  private readonly rpcClient: JsonRcpClient;
+  public readonly rpcClient: JsonRcpClient;
   private readonly db = new Database();
 
   constructor(connection: EthereumConnection, rpcClient: JsonRcpClient) {
