@@ -1,3 +1,4 @@
+// tslint:disable:no-object-mutation
 import cors = require("@koa/cors");
 import Koa from "koa";
 import bodyParser from "koa-bodyparser";
@@ -85,7 +86,6 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
                 }
                 await scraper.loadBlockchain();
                 const accountTxs = scraper.getAccount(options);
-                // tslint:disable-next-line:no-object-mutation
                 context.response.body = accountTxs !== undefined ? accountTxs : { result: null };
                 break;
               default:
