@@ -1,3 +1,4 @@
+// tslint:disable:no-object-mutation
 import cors = require("@koa/cors");
 import Koa from "koa";
 import bodyParser from "koa-bodyparser";
@@ -15,6 +16,13 @@ function getCount(): number {
   return count++;
 }
 
+function isTrue(data: unknown): boolean {
+  if (data === "1" || data === "true") {
+    return true;
+  }
+  return false;
+}
+
 export const api = new Koa();
 
 export async function start(args: ReadonlyArray<string>): Promise<void> {
@@ -25,9 +33,11 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
 
   const port = constants.port;
 
-  console.log("Connecting to blockchain ...");
+  console.log(`Connecting to blockchain ${blockchainBaseUrl} ...`);
   const scraper = await Scraper.establish(blockchainBaseUrl);
-  const connectedChainId = await scraper.chainId();
+  const chainId = scraper.chainId();
+  const height = await scraper.height();
+  console.log(`Connected to ${chainId}; height: ${height}`);
 
   console.log("Creating webserver ...");
   api.use(cors());
@@ -37,50 +47,78 @@ export async function start(args: ReadonlyArray<string>): Promise<void> {
     switch (context.path) {
       case "/healthz":
       case "/status":
-        const height = await scraper.height();
         // tslint:disable-next-line:no-object-mutation
         context.response.body = {
           status: "ok",
           nodeUrl: blockchainBaseUrl,
-          chainId: connectedChainId,
-          blocks: height,
-        };
-        break;
-      case "/blocks":
-        await scraper.loadBlockchain();
-        const blocks = scraper.getBlocks();
-        // tslint:disable-next-line:no-object-mutation
-        context.response.body = {
-          blocks: blocks,
+          chainId: chainId,
+          blocks: await scraper.height(),
         };
         break;
       case "/accounts":
         await scraper.loadBlockchain();
-        const accounts = scraper.getAccounts();
+
+        const includeData = isTrue(context.request.query.includeData);
+
+        const accounts = {};
+        for (const [address, value] of scraper.getAccounts()) {
+          // tslint:disable-next-line:no-object-mutation
+          accounts[address] = includeData ? value : {};
+        }
         // tslint:disable-next-line:no-object-mutation
         context.response.body = {
           accounts: accounts,
         };
         break;
-      default:
-        // koa sends 404 by default
-        const q = context.request.query;
-        if (q.module === "account" && q.action === "txlist") {
-          if (context.request.method !== "GET") {
-            throw new HttpError(405, "This endpoint requires a GET request");
-          }
-          const options = RequestParser.parseAccountBody(q);
-          if (!scraper.isValidAddress(options.address)) {
-            throw new HttpError(400, "Address is not in the expected format for this chain.");
-          }
-          await scraper.loadBlockchain();
-          const accountTxs = scraper.getAccountTxs(options);
-          // tslint:disable-next-line:no-object-mutation
-          context.response.body = accountTxs !== undefined ? accountTxs : { result: null };
+      case "/api":
+        if (context.request.method !== "GET") {
+          throw new HttpError(405, "This endpoint requires a GET request");
         }
+
+        const query = context.request.query;
+        switch (query.module) {
+          case "account": {
+            switch (query.action) {
+              case "txlist":
+                const options = RequestParser.parseAccountBody(query);
+                if (!scraper.isValidAddress(options.address)) {
+                  throw new HttpError(400, "Address is not in the expected format for this chain.");
+                }
+                await scraper.loadBlockchain();
+                const accountTxs = scraper.getAccount(options);
+                context.response.body = accountTxs !== undefined ? accountTxs : { result: null };
+                break;
+              default:
+                throw new HttpError(400, "Invalid 'action' parameter");
+            }
+            break;
+          }
+          case "proxy": {
+            // see https://etherscan.io/apis#proxy
+            switch (query.action) {
+              case "eth_blockNumber":
+                context.response.body = await scraper.rpcClient.blockNumber();
+                break;
+              case "eth_getTransactionByHash":
+                context.response.body = await scraper.rpcClient.getTransactionByHash(query.txhash);
+                break;
+              default:
+                throw new HttpError(400, "Unsupported 'action' parameter");
+            }
+            break;
+          }
+          default:
+            throw new HttpError(400, "Invalid 'module' parameter");
+        }
+        break;
+      default:
       // koa sends 404 by default
     }
   });
+
   console.log(`Starting webserver on port ${port} ...`);
   api.listen(port);
+
+  await scraper.loadBlockchain();
+  console.log("All available blocks processed.");
 }
