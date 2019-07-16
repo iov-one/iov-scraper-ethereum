@@ -79,7 +79,7 @@ function isStringOrNull(data: unknown): data is string | null {
 
 export class Scraper {
   public static async establish(baseUrl: string): Promise<Scraper> {
-    const connection = await EthereumConnection.establish(baseUrl);
+    const connection = await EthereumConnection.establish(baseUrl, {});
     const handler = await JsonRcpConnection.establish(baseUrl);
     return new Scraper(connection, handler);
   }
