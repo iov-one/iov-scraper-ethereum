@@ -3,7 +3,7 @@ import { ChainId } from "@iov/bcp";
 import { ethereumCodec, EthereumConnection } from "@iov/ethereum";
 
 import { AccountRequestBodyData } from "../actions/api/requestparser";
-import { JsonRcpConnection } from "./jsonrpcconnection";
+import { JsonRcpClient } from "./jsonrpcclient";
 import { decodeHexQuantityString } from "./utils";
 
 function getErrorFlag(txStatus: string): "0" | "1" {
@@ -80,17 +80,17 @@ function isStringOrNull(data: unknown): data is string | null {
 export class Scraper {
   public static async establish(baseUrl: string): Promise<Scraper> {
     const connection = await EthereumConnection.establish(baseUrl, {});
-    const handler = await JsonRcpConnection.establish(baseUrl);
-    return new Scraper(connection, handler);
+    const rpcClient = new JsonRcpClient(baseUrl);
+    return new Scraper(connection, rpcClient);
   }
 
   public readonly connection: EthereumConnection;
-  private readonly handler: JsonRcpConnection;
+  private readonly rpcClient: JsonRcpClient;
   private readonly db = new Database();
 
-  constructor(connection: EthereumConnection, handler: JsonRcpConnection) {
+  constructor(connection: EthereumConnection, rpcClient: JsonRcpClient) {
     this.connection = connection;
-    this.handler = handler;
+    this.rpcClient = rpcClient;
   }
 
   public chainId(): ChainId {
@@ -158,9 +158,9 @@ export class Scraper {
     if (this.db.lastBlockLoaded < lastBlock) {
       const loadFirstBlock = this.db.lastBlockLoaded === 0 ? 0 : 1;
       for (let height = this.db.lastBlockLoaded + loadFirstBlock; height <= lastBlock; height++) {
-        const block = await this.handler.getBlockByNumber(height);
+        const block = await this.rpcClient.getBlockByNumber(height);
         for (const tx of block.transactions) {
-          const txStatus = await this.handler.getTransactionStatus(tx.hash);
+          const txStatus = await this.rpcClient.getTransactionStatus(tx.hash);
           const isError = getErrorFlag(txStatus.status);
           const confirmations = lastBlock - Number(tx.blockNumber);
 

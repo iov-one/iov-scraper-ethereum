@@ -1,9 +1,9 @@
+import axios from "axios";
 import { ReadonlyDate } from "readonly-date";
 
 import { BlockId, TransactionId } from "@iov/bcp";
-import { isJsonRpcErrorResponse } from "@iov/jsonrpc";
+import { isJsonRpcErrorResponse, JsonRpcRequest, JsonRpcResponse, parseJsonRpcResponse2 } from "@iov/jsonrpc";
 
-import { HttpJsonRpcClient } from "./httpjsonrpcclient";
 import { decodeHexQuantity, decodeHexQuantityString, encodeQuantity } from "./utils";
 
 export interface Block {
@@ -13,19 +13,15 @@ export interface Block {
   readonly transactions: ReadonlyArray<any>;
 }
 
-export class JsonRcpConnection {
-  public static async establish(baseUrl: string): Promise<JsonRcpConnection> {
-    return new JsonRcpConnection(baseUrl);
-  }
-
-  private readonly rpcClient: HttpJsonRpcClient;
+export class JsonRcpClient {
+  private readonly baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.rpcClient = new HttpJsonRpcClient(baseUrl);
+    this.baseUrl = baseUrl;
   }
 
   public async getBlockByNumber(height: number): Promise<Block> {
-    const response = await this.rpcClient.run({
+    const response = await this.run({
       jsonrpc: "2.0",
       method: "eth_getBlockByNumber",
       params: [encodeQuantity(height), true],
@@ -49,7 +45,7 @@ export class JsonRcpConnection {
   }
 
   public async getTransactionStatus(id: TransactionId): Promise<any> {
-    const response = await this.rpcClient.run({
+    const response = await this.run({
       jsonrpc: "2.0",
       method: "eth_getTransactionReceipt",
       params: [id],
@@ -65,5 +61,11 @@ export class JsonRcpConnection {
     // tslint:disable-next-line:no-object-mutation
     response.result.status = decodeHexQuantityString(response.result.status);
     return response.result;
+  }
+
+  private async run(request: JsonRpcRequest): Promise<JsonRpcResponse> {
+    const result = await axios.post(this.baseUrl, request);
+    const responseBody = result.data;
+    return parseJsonRpcResponse2(responseBody);
   }
 }
