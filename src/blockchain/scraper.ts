@@ -27,6 +27,11 @@ export interface TxDetails {
   readonly hash: string;
   readonly blockNumber: string;
   readonly nonce: string;
+  /** The gas limit set by the user */
+  readonly gas: string;
+  /** The gas price */
+  readonly gasPrice: string;
+  /** The gas that was used to execute the transaction */
   readonly gasUsed: string;
   readonly value: string;
   readonly from: string;
@@ -182,6 +187,8 @@ export class Scraper {
             hash: tx.hash,
             blockNumber: decodeHexQuantityString(tx.blockNumber),
             nonce: decodeHexQuantityString(tx.nonce),
+            gas: decodeHexQuantityString(tx.gas),
+            gasPrice: decodeHexQuantityString(tx.gasPrice),
             gasUsed: decodeHexQuantityString(txStatus.gasUsed),
             value: decodeHexQuantityString(tx.value),
             from: from,

@@ -2,6 +2,8 @@
 
 ## 0.4.0
 
+- Add fields `gas` (the gas limit) and `gasPrice` to the transactions list output
+
 Breaking changes
 
 - Convert confirmations count to string
