@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+Breaking changes
+
+- Convert confirmations count to string
+
 ## 0.3.0
 
 - Start indexing as soon as the scraper is started

@@ -34,7 +34,7 @@ export interface TxDetails {
   readonly input: string;
   readonly txreceipt_status: string;
   readonly isError: "0" | "1";
-  readonly confirmations: number;
+  readonly confirmations: string;
 }
 
 export interface AccountStorage {
@@ -189,7 +189,7 @@ export class Scraper {
             input: tx.input,
             txreceipt_status: txStatus.status,
             isError: isError,
-            confirmations: confirmations,
+            confirmations: `${confirmations}`,
           };
 
           if (!this.db.accounts.has(tx.from)) {
