@@ -167,7 +167,7 @@ export class Scraper {
         for (const tx of block.transactions) {
           const txStatus = await this.rpcClient.getTransactionStatus(tx.hash);
           const isError = getErrorFlag(txStatus.status);
-          const confirmations = lastBlock - Number(tx.blockNumber);
+          const confirmations = lastBlock - Number(tx.blockNumber) + 1;
 
           const from = tx.from;
           if (typeof from !== "string") {

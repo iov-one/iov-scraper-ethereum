@@ -3,6 +3,7 @@
 ## 0.4.0
 
 - Add fields `gas` (the gas limit) and `gasPrice` to the transactions list output
+- Fix off-by-one error in confirmations count: starts with 1 as soon as transaction is in a block
 
 Breaking changes
 
