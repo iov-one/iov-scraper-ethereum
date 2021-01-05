@@ -23,7 +23,7 @@
     "@iov/socket": "^0.15.0",
     "@koa/cors": "^2.2.2",
     "@types/koa-bodyparser": "^4.2.1",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "bn.js": "^4.11.8",
     "koa": "^2.5.3",
     "koa-bodyparser": "^4.2.1",
